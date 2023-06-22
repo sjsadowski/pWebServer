@@ -1,0 +1,16 @@
+
+[project]
+name = "pWebServer"
+version = "23.6"
+description = "Small, asynchronous web server for use with Raspberry Pi Pico W boards and similar"
+authors = [
+    {name = "Stephen Sadowski", email = "stephen.sadowski@sjsadowski.com"},
+]
+dependencies = []
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "MIT"}
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

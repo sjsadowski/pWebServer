@@ -13,7 +13,7 @@ class Server:
     def __init__(self) -> None:
         pass
 
-    async def add_route(self, method: str, path: str, fn) -> None:
+    def add_route(self, method: str, path: str, fn) -> None:
         self.routes.append((method, path, fn))
 
     async def serve(self):
