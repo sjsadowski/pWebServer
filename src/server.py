@@ -98,11 +98,15 @@ class Server:
         res = Response()
         res.generate(req)
 
-        writer.write
-        writer.write('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
-        # writer.write(response)
-        writer.write('')
+        writer.write(res)
+        # writer.write('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
+        # # writer.write(response)
+        # writer.write('')
         await writer.drain()
         await writer.wait_closed()
         print("Client disconnected")
 
+    async def start(self, address: str = "0.0.0.0", port: int = 80):
+        '''Start the web server on adddress:port (default any:80)
+        '''
+        asyncio.create_task(asyncio.start_server(self.serve, address, port))
