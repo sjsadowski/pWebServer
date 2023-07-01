@@ -13,6 +13,8 @@ class NotFoundError(NotImplementedError):
     pass
 
 class Request:
+    '''Parses the request from the client
+    '''
 
     # headers is a list of tuples with the header name and its value
 
@@ -105,6 +107,8 @@ class Request:
         pass
 
 class Response:
+    '''Builds a response to be sent to the client
+    '''
 
     slots = ('_code', '_body')
 
@@ -120,6 +124,8 @@ class Response:
 
 
 class Server:
+    '''Handles the actual incoming requests and sends a response
+    '''
 
     routes: list = []
 
