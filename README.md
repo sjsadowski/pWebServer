@@ -6,6 +6,27 @@ Small, asynchronous web server for use with Raspberry Pi Pico W boards and simil
 
 python >=3.11 or micropython >=1.20
 
+## installing
+
+### python (with pypi)
+
+```sh
+pip install pWebServer
+```
+
+### micropython (with mip & url)
+
+Using repl:
+```py
+import mip
+mip.install("github:sjsadowski/pWebServer", version="latest")
+```
+
+Using mpremote:
+```sh
+mpremote mip install github:org/repo@branch-or-tag
+```
+
 ## Dependencies
 
 ### MicroPython

@@ -1,0 +1,10 @@
+{
+    "urls": [
+      ["pWebServer/__init__.py", "github:org/sjsadowski/pWebServer/src/__init__.py"],
+      ["pWebServer/__init__.py", "github:org/sjsadowski/pWebServer/src/server.py"]
+    ],
+    "deps": [
+      ["logging", "latest"]
+    ],
+    "version": "0.1"
+  }

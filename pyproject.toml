@@ -18,4 +18,6 @@ build-backend = "pdm.backend"
 [tool.pdm.dev-dependencies]
 dev = [
     "pytest>=7.4.0",
+    "pytest-aio>=1.5.0",
+    "pytest-aiohttp-client>=0.1.0",
 ]
