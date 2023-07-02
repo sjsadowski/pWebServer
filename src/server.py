@@ -132,12 +132,24 @@ class Server:
     def __init__(self) -> None:
         pass
 
+
     def add_route(self, method: str, path: str, fn) -> None:
+        '''Adds a function-based route
+        '''
         self.routes.append((method, path, fn))
+
+
+    # TODO: static route logic necessary
+    def static_route(self, path: str, recursive: bool = True) -> None:
+        '''Adds a static route - serves direct file content
+        '''
+        pass
 
 
     async def find_route(self, method: str, path:str) -> callable:
         '''Find a route based on method and path
+
+        Returns first matching route
         '''
 
         # TODO: route logic
@@ -175,9 +187,6 @@ class Server:
             logging.warn(not_implemented)
             res = Response(code=500, body=not_implemented)
             self.send_response(res)
-
-
-
 
         logging.info("Client disconnected")
 
