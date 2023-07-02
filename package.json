@@ -1,7 +1,7 @@
 {
     "urls": [
-      ["/src/pWebServer/__init__.py", "github:org/sjsadowski/pWebServer/src/__init__.py"],
-      ["/src/pWebServer/server.py", "github:org/sjsadowski/pWebServer/src/server.py"]
+      ["pWebServer/__init__.py", "github:org/sjsadowski/pWebServer/src/__init__.py"],
+      ["pWebServer/server.py", "github:org/sjsadowski/pWebServer/src/server.py"]
     ],
     "deps": [
       ["logging", "latest"]
