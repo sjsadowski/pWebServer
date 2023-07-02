@@ -24,7 +24,7 @@ mip.install("github:sjsadowski/pWebServer", version="latest")
 
 Using mpremote:
 ```sh
-mpremote mip install github:org/repo@branch-or-tag
+mpremote mip install github:sjsadowski/pWebServer
 ```
 
 ## Dependencies
