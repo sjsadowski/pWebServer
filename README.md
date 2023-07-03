@@ -1,6 +1,9 @@
 # pWebServer
-
 Small, asynchronous web server for use with Raspberry Pi Pico W boards and similar
+
+## Background
+I wanted something small and reusable to work with my raspberry pi pico w and didn't find anything in the wild.
+This is a work in progress, but I intend for it to be stable for at least my own use.
 
 ## Notes
 This library is not designed to be particularly fast, however it is intended to be easy to use.
