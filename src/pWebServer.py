@@ -1,4 +1,5 @@
 import sys
+import json
 import logging
 
 # Conditional import
@@ -110,17 +111,38 @@ class Response:
     '''Builds a response to be sent to the client
     '''
 
-    slots = ('_code', '_body')
+    slots = ('_code', '_code_text', '_headers', '_body')
 
     _code: int
+    _code_text: str
+    _headers: list
     _body: str
 
-    def __init__(self, code: int = 200, body: str = '') -> None:
+    def __init__(self, code: int = 200, headers: list = [], body: str = '') -> None:
+        if code not in HTTP_CODES.keys():
+            raise NotImplementedError(f'HTTP code ({code}) not implemented')
+
         self._code = code
+        self._code_text = HTTP_CODES[int(code)]
+
         self._body = body
 
-    async def start(self, req = None):
-        pass
+    def add_header(self, header: tuple):
+        if not isinstance(header, tuple):
+            raise ValueError('Header is not a tuple')
+
+    def __str__(self) -> str:
+        '''Return text for HTTP response
+        '''
+
+        response_line = f"HTTP/1.1 {self._code_text}\r\n"
+        if 'Content-Type' not in [a[0] for a in headers]:
+            headers.append(('Content-Type','text/plain'))
+
+        header_list = [': '.join(h) for h in self._headers]
+        headers = "\r\n".join(header_list)
+        body = f"\r\n\r\n{body}"
+        return f"{response_line}{headers}{body}"
 
 
 class Server:
@@ -133,7 +155,7 @@ class Server:
         pass
 
 
-    def add_route(self, method: str, path: str, fn) -> None:
+    def add_route(self, method: str, path: str, fn: callable) -> None:
         '''Adds a function-based route
         '''
         self.routes.append((method, path, fn))
@@ -192,6 +214,12 @@ class Server:
 
         logging.info("Client disconnected")
 
+    def add_default_route(self) -> None:
+        async def _default_route(request: Request) -> Response:
+            pass
+
+        self.add_route('GET', '/', _default_route)
+
     async def start(self, address: str = "0.0.0.0", port: int = 80):
         '''Start the web server on adddress:port (default any:80)
         '''
@@ -200,3 +228,13 @@ class Server:
             raise NotImplementedError('There are no routes implemented')
 
         asyncio.create_task(asyncio.start_server(self.serve, address, port))
+
+HTTP_CODES = {
+    200: '200 OK',
+    400: '400 Bad Request',
+    401: '401 Unauthorized',
+    403: '403 Forbidden',
+    404: '404 Not Found',
+    500: '500 Internal Server Error',
+    503: '503 Service Unavailable'
+}
