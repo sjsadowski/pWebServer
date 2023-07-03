@@ -5,10 +5,12 @@ import logging
 # Conditional import
 if sys.version.find('MicroPython') > -1:
     import uasyncio as asyncio # type: ignore
+    from uasyncio import StreamReader, StreamWriter # type: ignore
 else:
     import asyncio
+    from asyncio import StreamReader, StreamWriter
 
-from asyncio import StreamReader, StreamWriter
+
 
 class NotFoundError(NotImplementedError):
     pass
@@ -223,11 +225,10 @@ class Server:
     async def start(self, address: str = "0.0.0.0", port: int = 80):
         '''Start the web server on adddress:port (default any:80)
         '''
-
         if len(self.routes) == 0:
             raise NotImplementedError('There are no routes implemented')
 
-        asyncio.create_task(asyncio.start_server(self.serve, address, port))
+        await asyncio.start_server(self._serve, address, port)
 
 HTTP_CODES = {
     200: '200 OK',
