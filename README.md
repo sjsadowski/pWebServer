@@ -2,8 +2,22 @@
 
 Small, asynchronous web server for use with Raspberry Pi Pico W boards and similar
 
-### Notes
+## Notes
 This library is not designed to be particularly fast, however it is intended to be easy to use.
+
+### HTTP Methods
+Self-defined methods are not currently supported. PATCH, CONNECT, and TRACE are also not implmented
+
+### Paths
+Simple paths are supported. Complex path matching is not supported.
+
+For example, in some frameworks you might be able to define a path as
+```
+/some/path/to/:id
+```
+And that would populate the id property or some other variable with the value, for pWebServer that is not the case.
+
+For dynamic data use query strings
 
 **Example (micropython):**
 ```py
@@ -54,5 +68,6 @@ MicroPython does not ship with the full set of Python Standard Libraries. For in
 
 ## To Do:
 - Cookie support
+- POST/PUT data support
 - HTTP/2.0(?)
 - Better test coverage
