@@ -5,13 +5,15 @@ Small, asynchronous web server for use with Raspberry Pi Pico W boards and simil
 ### Notes
 This library is not designed to be particularly fast, however it is intended to be easy to use.
 
-**Example:**
+**Example (micropython):**
 ```py
 from pWebServer import Server
+import uasyncio as asyncio
 
 sv = Server()
 sv.add_default_route() # simply adds a route at / that returns 200 OK
-sv.start() # Start serving for 0.0.0.0 (all ipv4 ips) on port 80
+loop = asyncio.get_event_loop()
+loop.create_task(sv.start()) # Start serving for 0.0.0.0 (all ipv4 ips) on port 80
 ```
 
 ## Requirements
