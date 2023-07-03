@@ -172,7 +172,9 @@ class Server:
         await self._writer.drain()
         await self._writer.wait_closed()
 
-    async def serve(self, reader, writer):
+    async def _serve(self, reader, writer):
+        '''Find and serve the route
+        '''
 
         self._reader = reader
         self._writer = writer
@@ -193,4 +195,8 @@ class Server:
     async def start(self, address: str = "0.0.0.0", port: int = 80):
         '''Start the web server on adddress:port (default any:80)
         '''
+
+        if len(self.routes) == 0:
+            raise NotImplementedError('There are no routes implemented')
+
         asyncio.create_task(asyncio.start_server(self.serve, address, port))
