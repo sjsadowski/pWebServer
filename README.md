@@ -2,6 +2,18 @@
 
 Small, asynchronous web server for use with Raspberry Pi Pico W boards and similar
 
+### Notes
+This library is not designed to be particularly fast, however it is intended to be easy to use.
+
+**Example:**
+```py
+from pWebServer import Server
+
+sv = Server()
+sv.add_default_route() # simply adds a route at / that returns 200 OK
+sv.start() # Start serving for 0.0.0.0 (all ipv4 ips) on port 80
+```
+
 ## Requirements
 
 python >=3.11 or micropython >=1.20
@@ -38,3 +50,7 @@ MicroPython does not ship with the full set of Python Standard Libraries. For in
 
 ** None **
 
+## To Do:
+- Cookie support
+- HTTP/2.0(?)
+- Better test coverage
