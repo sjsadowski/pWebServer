@@ -10,6 +10,7 @@ else:
     import asyncio
     from asyncio import StreamReader, StreamWriter
 
+logging.basicConfig(level=logging.DEBUG)
 
 
 class NotFoundError(NotImplementedError):
@@ -29,7 +30,10 @@ class Request:
         '_preserve_body',
         '_body',
         '_standard_methods',
-        '_unimplemented_methods'
+        '_unimplemented_methods',
+        'method',
+        'path',
+        'query_string'
     ]
 
     _reader: StreamReader
@@ -39,6 +43,9 @@ class Request:
     _preserve_body: bool
     _body: str
     _standard_methods: list
+    method: str
+    path: str
+    query_string: str
 
     def __init__(self, reader:StreamReader, preserve_body = False) -> None:
         self._standard_methods = ['GET','POST','PUT','PATCH','DELETE','CONNECT','OPTIONS','TRACE']
@@ -54,36 +61,41 @@ class Request:
         '''Parse an http request
         '''
         self._request = await self._parse_request(self._reader)
+        self.method, self.path, self.query_string = self._request
         self._headers = await self._parse_headers(self._reader)
         self._body = await self._parse_body(self._reader)
         if self._request[0] in ['GET', 'DELETE']:
             if not self._preserve_body:
-                logging.warn(f'Request: {self._request} includes a body where none is expected, discarding')
+                logging.debug(f'Request: {self._request} includes a body where none is expected, discarding')
                 self._body = ''
             else:
-                logging.warn(f'Request: {self._request} includes a body where none is expected, but preserve_body is set')
+                logging.debug(f'Request: {self._request} includes a body where none is expected, but preserve_body is set')
 
 
-
-    async def _parse_headers(self, reader: StreamReader) -> None:
+    async def _parse_headers(self, reader: StreamReader) -> list:
         '''(Private) parse request headers
         '''
         # The below reads the incoming request until it hits an empty line
-        header_lines = reader.readuntil(b"\r\n\r\n")
+        header_lines: str = await reader.readuntil(b"\r\n\r\n")
+        headers: list = []
+
         for header_line in header_lines.split(b"\r\n"):
-            # done
-            if header_line == b"\r\n":
-                break
-            key, value = header_line.decode('utf-8').strip().split(':')
-            self.headers.append((key, value))
+            if header_line.decode('utf-8') == "\r\n":
+                continue
+            try:
+                key, value = header_line.decode('utf-8').strip().split(':',1)
+                headers.append((key, value))
+            except ValueError:
+                logging.debug("Discarding empty header value")
 
 
+        return headers
 
     async def _parse_request(self, reader: StreamReader = None) -> tuple:
         '''(private) parse request line and determine method, path, and query params
         '''
         if not reader:
-            reader = self.reader
+            reader = self._reader
 
         if not reader:
             raise ValueError('No StreamReader supplied')
@@ -102,12 +114,13 @@ class Request:
 
         # HTTP encode the spaces in the query string, just in case
         query_string.replace(' ', '%20')
+
         return (method, path, query_string)
 
     async def _parse_body(self, reader: StreamReader):
         '''(private) parse body
         '''
-        pass
+        return ''
 
 class Response:
     '''Builds a response to be sent to the client
@@ -126,7 +139,7 @@ class Response:
 
         self._code = code
         self._code_text = HTTP_CODES[int(code)]
-
+        self._headers = headers
         self._body = body
 
     def add_header(self, header: tuple):
@@ -136,14 +149,23 @@ class Response:
     def __str__(self) -> str:
         '''Return text for HTTP response
         '''
+        headers: list = []
 
         response_line = f"HTTP/1.1 {self._code_text}\r\n"
-        if 'Content-Type' not in [a[0] for a in headers]:
+        if len(self._headers) == 0:
             headers.append(('Content-Type','text/plain'))
+        else:
+            if 'Content-Type' not in [a[0] for a in self._headers]:
+                headers.append(('Content-Type','text/plain'))
 
-        header_list = [': '.join(h) for h in self._headers]
+
+        header_list = [': '.join(h) for h in headers]
         headers = "\r\n".join(header_list)
-        body = f"\r\n\r\n{body}"
+        if self._body != '':
+            body = f"\r\n\r\n{self._body}"
+        else:
+            body = self._code_text
+
         return f"{response_line}{headers}{body}"
 
 
@@ -151,11 +173,14 @@ class Server:
     '''Handles the actual incoming requests and sends a response
     '''
 
-    routes: list = []
+    __slots__ = ('routes', '_reader', '_writer')
+
+    routes: list
+    _writer: StreamWriter
+    _reader: StreamReader
 
     def __init__(self) -> None:
-        pass
-
+        self.routes = []
 
     def add_route(self, method: str, path: str, fn: callable) -> None:
         '''Adds a function-based route
@@ -177,7 +202,12 @@ class Server:
         '''
 
         # TODO: route logic
-        route = None
+        print(self.routes)
+        matched_routes = [route for route in self.routes if route[0] == method and route[1] == path]
+        if len(matched_routes) == 0:
+            raise NotFoundError(f'No route matched {method} {path}')
+        else:
+            route = matched_routes.pop(0)[2]
         return route
 
 
@@ -188,13 +218,17 @@ class Server:
 
     async def send_response(self, res: Response):
         #res.generate(req)
+        response_text = str(res).encode()
+        logging.debug(f"Sending response: {res._code_text}")
 
-        self._writer.write(res)
+        self._writer.write(response_text)
         # writer.write('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
         # # writer.write(response)
         # writer.write('')
         await self._writer.drain()
+        self._writer.close()
         await self._writer.wait_closed()
+        print('Response sent')
 
     async def _serve(self, reader, writer):
         '''Find and serve the route
@@ -204,21 +238,30 @@ class Server:
         self._writer = writer
 
         req = Request(self._reader)
-        res = Response()
         # parse the request
         try:
             logging.debug('Parsing request')
-            req.parse()
+            await req.parse()
         except NotImplementedError as not_implemented:
             logging.warn(not_implemented)
             res = Response(code=500, body=not_implemented)
             self.send_response(res)
 
+        try:
+            fn = await self.find_route(req.method, req.path)
+            res = await fn(req)
+        except NotFoundError as nfe:
+            logging.warning(f"No route found for {req.method} {req.path}")
+            res = Response(code=404)
+
+        await self.send_response(res)
+
         logging.info("Client disconnected")
 
     def add_default_route(self) -> None:
         async def _default_route(request: Request) -> Response:
-            pass
+            res = Response(body='200 OK')
+            return res
 
         self.add_route('GET', '/', _default_route)
 

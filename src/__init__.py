@@ -1,1 +1,1 @@
-from pWebServer import *
+from . import pWebServer
