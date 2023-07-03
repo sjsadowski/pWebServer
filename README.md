@@ -66,6 +66,11 @@ MicroPython does not ship with the full set of Python Standard Libraries. For in
 
 ** None **
 
+### Development
+    - pytest >= 7.4.0
+    - pytest-asyncio >= 0.21.0
+    - httpx >= 0.24.1
+
 ## To Do:
 - Cookie support
 - POST/PUT data support
