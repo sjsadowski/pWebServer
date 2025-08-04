@@ -1,16 +1,20 @@
 import sys
 import json
 
+try:
+    import logging
+except ImportError:
+    # If logging is not available, we use a mock logging class
+    from .MockLogging import logging
+
 # we need this for reimplementing readuntil
 MICROPYTHON = sys.version.find('MicroPython') > -1
 # Conditional import
 if MICROPYTHON > -1:
     import uasyncio as asyncio # type: ignore
     from uasyncio import StreamReader, StreamWriter # type: ignore
-    from .MockLogging import logging
 else:
     import asyncio
-    import logging
     from asyncio import StreamReader, StreamWriter
 
 logging.basicConfig(level=logging.DEBUG) # type: ignore

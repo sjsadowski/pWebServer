@@ -1,3 +1,5 @@
+# Quick and dirty mock of logging module if it's not available
+
 class MockLogging():
 
     DEBUG = None
@@ -8,8 +10,8 @@ class MockLogging():
     def basicConfig(self, **kwargs):
         pass
 
-    def log(self, statement):
-        print(statement)
+    def log(self, statement, level=None):
+        print (statement)
 
     info = log
 
