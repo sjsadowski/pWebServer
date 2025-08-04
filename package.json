@@ -6,5 +6,17 @@
     "deps": [
       ["logging", "latest"]
     ],
-    "version": "0.1"
+    "version": "25.4.a1",
+    "description": "Small, asynchronous web server for use with Raspberry Pi Pico W boards and similar",
+    "authors": [
+      {"name": "Stephen Sadowski", "email": "stephen.sadowski+opensource@sjsadowski.com"}
+    ],
+    "license": "MIT",
+    "keywords": ["web", "server", "asyncio", "micropython", "pico-w", "raspberry-pi"],
+    "classifiers": [
+      "Development Status :: 3 - Alpha",
+      "Intended Audience :: Developers",
+      "License :: OSI Approved :: MIT License",
+      "Programming Language :: Python :: 3"
+    ]
   }
