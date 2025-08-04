@@ -1,1 +1,1 @@
-from . import pWebServer
+import pWebServer # type: ignore
