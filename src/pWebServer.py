@@ -1,17 +1,19 @@
 import sys
 import json
-import logging
 
+# we need this for reimplementing readuntil
+MICROPYTHON = sys.version.find('MicroPython') > -1
 # Conditional import
-if sys.version.find('MicroPython') > -1:
+if MICROPYTHON > -1:
     import uasyncio as asyncio # type: ignore
     from uasyncio import StreamReader, StreamWriter # type: ignore
+    from .MockLogging import logging
 else:
     import asyncio
+    import logging
     from asyncio import StreamReader, StreamWriter
 
-logging.basicConfig(level=logging.DEBUG)
-
+logging.basicConfig(level=logging.DEBUG) # type: ignore
 
 class NotFoundError(NotImplementedError):
     pass
@@ -71,12 +73,27 @@ class Request:
             else:
                 logging.debug(f'Request: {self._request} includes a body where none is expected, but preserve_body is set')
 
+    async def _readuntil(self, reader: StreamReader, delimiter: bytes) -> bytes:
+        '''(Private) read until a delimiter is found
+        '''
+        header_block: bytes = b''
+        count = 0
+
+        while True:
+            char = await reader.read(1)
+            if char == b'\r' or char == b'\n':
+                count += 1
+            header_block += char
+            if count == 4:
+                break
+
+        return header_block
 
     async def _parse_headers(self, reader: StreamReader) -> list:
         '''(Private) parse request headers
         '''
         # The below reads the incoming request until it hits an empty line
-        header_lines: str = await reader.readuntil(b"\r\n\r\n")
+        header_lines: str = await reader.readuntil(b"\r\n\r\n") if not MICROPYTHON else await self._readuntil(reader, b"\r\n\r\n")
         headers: list = []
 
         for header_line in header_lines.split(b"\r\n"):
@@ -90,6 +107,7 @@ class Request:
 
 
         return headers
+
 
     async def _parse_request(self, reader: StreamReader = None) -> tuple:
         '''(private) parse request line and determine method, path, and query params
@@ -130,8 +148,9 @@ class Response:
 
     _code: int
     _code_text: str
-    _headers: list
+    _headers: list[tuple[str, str]]
     _body: str
+    _close: bool = True
 
     def __init__(self, code: int = 200, headers: list = [], body: str = '') -> None:
         if code not in HTTP_CODES.keys():
@@ -142,29 +161,39 @@ class Response:
         self._headers = headers
         self._body = body
 
-    def add_header(self, header: tuple):
-        if not isinstance(header, tuple):
+    def add_header(self, header: tuple[str, str]) -> None:
+        if not isinstance(header, tuple): # type: ignore
             raise ValueError('Header is not a tuple')
+
+        self._headers.append(header)
 
     def __str__(self) -> str:
         '''Return text for HTTP response
         '''
-        headers: list = []
+        response_line: str = f"HTTP/1.1 {self._code_text}\r\n"
+        body: str = ''
 
-        response_line = f"HTTP/1.1 {self._code_text}\r\n"
-        if len(self._headers) == 0:
-            headers.append(('Content-Type','text/plain'))
-        else:
-            if 'Content-Type' not in [a[0] for a in self._headers]:
-                headers.append(('Content-Type','text/plain'))
-
-
-        header_list = [': '.join(h) for h in headers]
-        headers = "\r\n".join(header_list)
         if self._body != '':
             body = f"\r\n\r\n{self._body}"
+
+        if len(self._headers) == 0:
+            self.add_header(('Content-Type','text/plain'))
         else:
-            body = self._code_text
+            if 'Content-Type' not in [a[0] for a in self._headers]:
+                self.add_header(('Content-Type','text/plain'))
+
+        if not body:
+            self.add_header(('Content-Length', '0'))
+        else:
+            self.add_header(('Content-Length', str(len(self._body))))
+
+        # if we want to stream, close will be false
+        if self._close:
+            self.add_header(('Connection', 'close'))
+
+
+        header_list = [': '.join(h) for h in self._headers]
+        headers = "\r\n".join(header_list)
 
         return f"{response_line}{headers}{body}"
 
@@ -175,7 +204,7 @@ class Server:
 
     __slots__ = ('routes', '_reader', '_writer')
 
-    routes: list
+    routes: list[tuple[str, str, callable]] # type: ignore
     _writer: StreamWriter
     _reader: StreamReader
 
@@ -219,16 +248,18 @@ class Server:
     async def send_response(self, res: Response):
         #res.generate(req)
         response_text = str(res).encode()
-        logging.debug(f"Sending response: {res._code_text}")
+        logging.debug(f"Sending response: {res._code}")
 
         self._writer.write(response_text)
+
+        logging.debug(f"Response: {response_text.decode('utf-8')}")
         # writer.write('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
         # # writer.write(response)
         # writer.write('')
         await self._writer.drain()
-        self._writer.close()
+        #self._writer.close()
         await self._writer.wait_closed()
-        print('Response sent')
+        logging.debug(f'Response sent {res._code_text}')
 
     async def _serve(self, reader, writer):
         '''Find and serve the route
@@ -245,7 +276,7 @@ class Server:
         except NotImplementedError as not_implemented:
             logging.warn(not_implemented)
             res = Response(code=500, body=not_implemented)
-            self.send_response(res)
+            await self.send_response(res)
 
         try:
             fn = await self.find_route(req.method, req.path)
@@ -255,6 +286,7 @@ class Server:
             res = Response(code=404)
 
         await self.send_response(res)
+        await self._server.wait_closed()
 
         logging.info("Client disconnected")
 
@@ -271,7 +303,7 @@ class Server:
         if len(self.routes) == 0:
             raise NotImplementedError('There are no routes implemented')
 
-        await asyncio.start_server(self._serve, address, port)
+        self._server = await asyncio.start_server(self._serve, address, port)
 
 HTTP_CODES = {
     200: '200 OK',
