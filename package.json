@@ -2,7 +2,7 @@
     "urls": [
       ["pWebServer/__init__.py", "github:sjsadowski/pWebServer/src/__init__.py"],
       ["pWebServer/pWebServer.py", "github:sjsadowski/pWebServer/src/pWebServer.py"],
-      ["pWebServer/pWebServer.py", "github:sjsadowski/pWebServer/src/MockLogging.py"]
+      ["pWebServer/MockLogging.py", "github:sjsadowski/pWebServer/src/MockLogging.py"]
 
     ],
     "deps": [
