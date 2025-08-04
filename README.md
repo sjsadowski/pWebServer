@@ -24,7 +24,7 @@ For dynamic data use query strings
 
 **Example (micropython - if installed with mip):**
 ```py
-from lib.pWebServer.pWebServer import Server
+from pWebServer import Server
 import uasyncio as asyncio
 
 sv = Server()

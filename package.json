@@ -1,12 +1,14 @@
 {
     "urls": [
       ["pWebServer/__init__.py", "github:sjsadowski/pWebServer/src/__init__.py"],
-      ["pWebServer/pWebServer.py", "github:sjsadowski/pWebServer/src/pWebServer.py"]
+      ["pWebServer/pWebServer.py", "github:sjsadowski/pWebServer/src/pWebServer.py"],
+      ["pWebServer/pWebServer.py", "github:sjsadowski/pWebServer/src/MockLogging.py"]
+
     ],
     "deps": [
       ["logging", "latest"]
     ],
-    "version": "25.4.a1",
+    "version": "25.4.a2",
     "description": "Small, asynchronous web server for use with Raspberry Pi Pico W boards and similar",
     "authors": [
       {"name": "Stephen Sadowski", "email": "stephen.sadowski+opensource@sjsadowski.com"}

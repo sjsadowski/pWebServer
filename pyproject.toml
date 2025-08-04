@@ -1,7 +1,7 @@
 
 [project]
 name = "pWebServer"
-version = "25.4.a1"
+version = "25.4.a2"
 description = "Small, asynchronous web server for use with Raspberry Pi Pico W boards and similar"
 authors = [
     {name = "Stephen Sadowski", email = "stephen.sadowski+opensource@sjsadowski.com"},
