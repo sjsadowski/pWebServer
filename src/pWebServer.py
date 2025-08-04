@@ -13,9 +13,17 @@ MICROPYTHON = sys.version.find('MicroPython') > -1
 if MICROPYTHON > -1:
     import uasyncio as asyncio # type: ignore
     from uasyncio import StreamReader, StreamWriter # type: ignore
+
+    def iscoroutinefunction(fn: callable) -> bool:
+        '''Check if a function is a coroutine function
+
+        also note that this is silly because in micropython, coroutines are generators,
+        '''
+        return str(type(fn)) == "<class 'generator'>"
 else:
     import asyncio
     from asyncio import StreamReader, StreamWriter
+    from inspect import iscoroutinefunction
 
 logging.basicConfig(level=logging.DEBUG) # type: ignore
 
@@ -257,9 +265,6 @@ class Server:
         self._writer.write(response_text)
 
         logging.debug(f"Response: {response_text.decode('utf-8')}")
-        # writer.write('HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n')
-        # # writer.write(response)
-        # writer.write('')
         await self._writer.drain()
         #self._writer.close()
         await self._writer.wait_closed()
@@ -284,10 +289,27 @@ class Server:
 
         try:
             fn = await self.find_route(req.method, req.path)
-            res = await fn(req)
+            logging.debug(f"Found route for {req.method} {req.path}")
+
+            if not iscoroutinefunction(fn):
+                logging.debug(f"Calling route function {fn.__name__} synchronously - this MAY block the event loop")
+                res = fn(req)
+            else:
+                res = await fn(req)
+
+            # Check if the response is a Response object
+            if type(res) is not Response:
+                raise TypeError(f"Route function {fn.__name__} did not return a Response object")
+
+        # 404 Not Found
         except NotFoundError as nfe:
             logging.warning(f"No route found for {req.method} {req.path}")
             res = Response(code=404)
+
+        # if our function didn't return a Response object return a 500 error
+        except TypeError as te:
+            logging.error(f"Type error in route function {fn.__name__}: {te}")
+            res = Response(code=500, body="Internal Server Error: bad response from route")
 
         await self.send_response(res)
         await self._server.wait_closed()
