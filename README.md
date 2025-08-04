@@ -51,7 +51,7 @@ pip install pWebServer
 Using repl:
 ```py
 import mip
-mip.install("github:sjsadowski/pWebServer", version="main")
+mip.install("github:sjsadowski/pWebServer", version="latest")
 ```
 
 Using mpremote:
