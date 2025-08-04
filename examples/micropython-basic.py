@@ -1,4 +1,4 @@
-from pWebServer import Server
+from pWebServer.pWebServer import Server
 import uasyncio as asyncio
 
 sv = Server()

@@ -1,1 +1,1 @@
-from pWebServer import Server, Request, Response # noqa: F401
+from .pWebServer import Server, Request, Response # noqa: F401
