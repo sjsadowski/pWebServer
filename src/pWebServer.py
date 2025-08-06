@@ -85,20 +85,41 @@ class Request:
             else:
                 logging.debug(f'Request: {self._request} includes a body where none is expected, but preserve_body is set')
 
-    async def _readuntil(self, reader: StreamReader, delimiter: bytes) -> bytes:
+    async def _readuntil(self, reader: StreamReader, delimiter: bytes = b"\r\n\r\n") -> bytes:
         '''(Private) read until a delimiter is found
+        This is a (bad) reimplementation of StreamReader.readuntil for MicroPython
+
+        problem statement: reading bytes from a stream consumes the byte from the stream,
+        effectively shifting it off. Each byte then needs to be stored until the delimiter
+        is found. We then need to return the bytearray of the bytes read until the delimiter.
+
+        The delimeter also needs to be read and tracked, because if a byte arrives in sequence
+        that doesn't matche the delimeter, the count of bytes needs to be reset.
+
+        NOTE: this problem only exists in MicroPython, and only because the stream is consumed
+        during reading.
+
+        This also check on each byte as it is read as opposed to reading bytes and checking
+        against a growing string every time, which is less efficient.
         '''
         header_block: bytes = b''
-        count = 0
+        count: int = 0
+        delimiter_count: int = len(delimiter)
 
-        while True:
-            char = await reader.read(1)
-            if char == b'\r' or char == b'\n':
+        while count < len(delimiter):
+            bchar: bytes = await reader.read(1)
+            header_block += bchar
+            if bchar == delimiter[count]:
                 count += 1
-            header_block += char
-            if count == 4:
+            else:
+                count = 0
+                # (f"match: {count}")
+            if count == len(delimiter):
                 break
 
+        if count == 0:
+            logging.debug("Delimiter not found in request")
+            raise asyncio.IncompleteReadError("Delimiter not found in request", 0)
         return header_block
 
     async def _parse_headers(self, reader: StreamReader) -> list:
