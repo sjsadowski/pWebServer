@@ -204,30 +204,34 @@ class Response:
         '''
         response_line: str = f"HTTP/1.1 {self._code_text}\r\n"
         body: str = ''
+        headers: list[tuple[str, str]] = self._headers if self._headers else []
 
         if self._body != '':
             body = f"\r\n\r\n{self._body}"
 
         if len(self._headers) == 0:
-            self.add_header(('Content-Type','text/plain'))
+            headers.append(('Content-Type','text/plain'))
+            headers.append(('Content-Length', str(len(self._body))))
         else:
             if 'Content-Type' not in [a[0] for a in self._headers]:
-                self.add_header(('Content-Type','text/plain'))
+                headers.append(('Content-Type','text/plain'))
 
-        if not body:
-            self.add_header(('Content-Length', '0'))
+        if 'Content-Length' not in [a[0] for a in headers]:
+            headers.append(('Content-Length', str(len(self._body))))
         else:
-            self.add_header(('Content-Length', str(len(self._body))))
+            # find the Cont-Length header and replace it
+            new_headers = [(header, value) for header, value in headers if header != 'Content-Length']
+            new_headers.append(('Content-Length', str(len(self._body))))
+            headers = new_headers
 
         # if we want to stream, close will be false
         if self._close:
             self.add_header(('Connection', 'close'))
 
+        header_list = [': '.join(h) for h in headers]
+        header_text: str = "\r\n".join(header_list)
 
-        header_list = [': '.join(h) for h in self._headers]
-        headers = "\r\n".join(header_list)
-
-        return f"{response_line}{headers}{body}"
+        return f"{response_line}{header_text}{body}"
 
 
 class Server:
