@@ -108,7 +108,7 @@ class Request:
         while count < len(delimiter):
             bchar: bytes = bytes(await reader.read(1))
             header_block += bchar
-            if bchar == delimiter[count]:
+            if bchar[0] == delimiter[count]:
                 count += 1
             else:
                 count = 0
