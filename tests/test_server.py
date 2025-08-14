@@ -22,11 +22,11 @@ async def test_server_start_in_asyncio():
 async def test_server_start_with_client():
     sv = Server()
     sv.add_default_route()
-    await sv.start(port=14151)
+    await sv.start(port=14152)
     # wait for create_task to complete
     await asyncio.sleep(0.25)
     async with httpx.AsyncClient() as client:
-        r = await client.get('http://localhost:14151/',timeout=0.5)
+        r = await client.get('http://localhost:14152/',timeout=0.5)
 
 
 def test_server_start():
