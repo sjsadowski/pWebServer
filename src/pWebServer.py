@@ -10,7 +10,7 @@ except ImportError:
 # we need this for reimplementing readuntil
 MICROPYTHON = sys.version.find('MicroPython') > -1
 # Conditional import
-if MICROPYTHON > -1:
+if MICROPYTHON:
     import uasyncio as asyncio # type: ignore
     from uasyncio import StreamReader, StreamWriter # type: ignore
 
@@ -104,10 +104,9 @@ class Request:
         '''
         header_block: bytes = b''
         count: int = 0
-        delimiter_count: int = len(delimiter)
 
         while count < len(delimiter):
-            bchar: bytes = await reader.read(1)
+            bchar: bytes = bytes(await reader.read(1))
             header_block += bchar
             if bchar == delimiter[count]:
                 count += 1
@@ -235,11 +234,12 @@ class Server:
     '''Handles the actual incoming requests and sends a response
     '''
 
-    __slots__ = ('routes', '_reader', '_writer')
+    __slots__ = ('routes', '_reader', '_writer', '_server')
 
     routes: list[tuple[str, str, callable]] # type: ignore
     _writer: StreamWriter
     _reader: StreamReader
+    _server: asyncio.AbstractServer
 
     def __init__(self) -> None:
         self.routes = []
